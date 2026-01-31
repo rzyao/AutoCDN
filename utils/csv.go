@@ -84,6 +84,22 @@ func ExportCsv(data []CloudflareIPData) {
 	w.Flush()
 }
 
+func ExportCsvToFile(data []CloudflareIPData, filename string) {
+	if len(data) == 0 || filename == "" {
+		return
+	}
+	fp, err := os.Create(filename)
+	if err != nil {
+		log.Fatalf("创建文件[%s]失败：%v", filename, err)
+		return
+	}
+	defer fp.Close()
+	w := csv.NewWriter(fp)
+	_ = w.Write([]string{"IP 地址", "已发送", "已接收", "丢包率", "平均延迟", "下载速度 (MB/s)"})
+	_ = w.WriteAll(convertToString(data))
+	w.Flush()
+}
+
 func convertToString(data []CloudflareIPData) [][]string {
 	result := make([][]string, 0)
 	for _, v := range data {

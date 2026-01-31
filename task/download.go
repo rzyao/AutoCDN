@@ -74,15 +74,27 @@ func TestDownloadSpeed(ipSet utils.PingDelaySet) (speedSet utils.DownloadSpeedSe
 	}
 	bar := utils.NewBar(TestCount, bar_b, "")
 	for i := 0; i < testNum; i++ {
+		if utils.CheckCanceled() {
+			fmt.Println("下载测速已取消")
+			break
+		}
+
+		fmt.Printf("\r[测试进度 %d/%d] 正在测速 IP: %s ... ", i+1, testNum, ipSet[i].IP.String())
 		speed := downloadHandler(ipSet[i].IP)
 		ipSet[i].DownloadSpeed = speed
+
+		speedMB := speed / 1024 / 1024
+
 		// 在每个 IP 下载测速后，以 [下载速度下限] 条件过滤结果
 		if speed >= MinSpeed*1024*1024 {
+			fmt.Printf("速度: %.2f MB/s [合格]\n", speedMB)
 			bar.Grow(1, "")
 			speedSet = append(speedSet, ipSet[i]) // 高于下载速度下限时，添加到新数组中
 			if len(speedSet) == TestCount {       // 凑够满足条件的 IP 时（下载测速数量 -dn），就跳出循环
 				break
 			}
+		} else {
+			fmt.Printf("速度: %.2f MB/s [跳过]\n", speedMB)
 		}
 	}
 	bar.Done()

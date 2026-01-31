@@ -147,43 +147,25 @@ func (r *IPRanges) chooseIPv6() {
 	}
 }
 
-func loadIPRanges() []*net.IPAddr {
+// loadIPRangesFromFile 读取指定IP文件
+func loadIPRangesFromFile(ipFile string) []*net.IPAddr {
 	ranges := newIPRanges()
-	if IPText != "" { // 从参数中获取 IP 段数据
-		IPs := strings.Split(IPText, ",") // 以逗号分隔为数组并循环遍历
-		for _, IP := range IPs {
-			IP = strings.TrimSpace(IP) // 去除首尾的空白字符（空格、制表符、换行符等）
-			if IP == "" {              // 跳过空的（即开头、结尾或连续多个 ,, 的情况）
-				continue
-			}
-			ranges.parseCIDR(IP) // 解析 IP 段，获得 IP、IP 范围、子网掩码
-			if isIPv4(IP) {      // 生成要测速的所有 IPv4 / IPv6 地址（单个/随机/全部）
-				ranges.chooseIPv4()
-			} else {
-				ranges.chooseIPv6()
-			}
+	file, err := os.Open(ipFile)
+	if err != nil {
+		log.Panic(err)
+	}
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
 		}
-	} else { // 从文件中获取 IP 段数据
-		if IPFile == "" {
-			IPFile = defaultInputFile
-		}
-		file, err := os.Open(IPFile)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer file.Close()
-		scanner := bufio.NewScanner(file)
-		for scanner.Scan() { // 循环遍历文件每一行
-			line := strings.TrimSpace(scanner.Text()) // 去除首尾的空白字符（空格、制表符、换行符等）
-			if line == "" {                           // 跳过空行
-				continue
-			}
-			ranges.parseCIDR(line) // 解析 IP 段，获得 IP、IP 范围、子网掩码
-			if isIPv4(line) {      // 生成要测速的所有 IPv4 / IPv6 地址（单个/随机/全部）
-				ranges.chooseIPv4()
-			} else {
-				ranges.chooseIPv6()
-			}
+		ranges.parseCIDR(line)
+		if isIPv4(line) {
+			ranges.chooseIPv4()
+		} else {
+			ranges.chooseIPv6()
 		}
 	}
 	return ranges.ips

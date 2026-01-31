@@ -1,0 +1,20 @@
+{
+  "name": "autocdn",
+  "version": "1.0.0",
+  "description": "AutoCDN 构建脚本",
+  "scripts": {
+    "dev": "wails dev",
+    "build:gui:windows": "wails build -platform windows/amd64",
+    "build:cli:windows": "set GOOS=windows&& set GOARCH=amd64&& go build -ldflags \"-s -w\" -o build/bin/AutoCDN-CLI.exe cmd/cli/main.go",
+    "build:cli:linux": "set GOOS=linux&& set GOARCH=amd64&& go build -ldflags \"-s -w\" -o build/bin/AutoCDN-CLI-Linux-amd64 cmd/cli/main.go",
+    "build:cli:linux:arm64": "set GOOS=linux&& set GOARCH=arm64&& go build -ldflags \"-s -w\" -o build/bin/AutoCDN-CLI-Linux-arm64 cmd/cli/main.go",
+    "build:cli:mac": "set GOOS=darwin&& set GOARCH=amd64&& go build -ldflags \"-s -w\" -o build/bin/AutoCDN-CLI-Mac cmd/cli/main.go",
+    "build:all": "npm run build:gui:windows && npm run build:cli:windows && npm run build:cli:linux && npm run build:cli:linux:arm64 && npm run build:cli:mac"
+  },
+  "keywords": [
+    "wails",
+    "go",
+    "autocdn"
+  ],
+  "author": ""
+}

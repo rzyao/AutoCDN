@@ -48,7 +48,20 @@ func checkPingDefault() {
 
 func NewPing() *Ping {
 	checkPingDefault()
-	ips := loadIPRanges()
+	ips := loadIPRangesFromFile(IPFile)
+	return &Ping{
+		wg:      &sync.WaitGroup{},
+		m:       &sync.Mutex{},
+		ips:     ips,
+		csv:     make(utils.PingDelaySet, 0),
+		control: make(chan bool, Routines),
+		bar:     utils.NewBar(len(ips), "可用:", ""),
+	}
+}
+
+func NewPingWithFile(ipFile string) *Ping {
+	checkPingDefault()
+	ips := loadIPRangesFromFile(ipFile)
 	return &Ping{
 		wg:      &sync.WaitGroup{},
 		m:       &sync.Mutex{},
@@ -61,14 +74,20 @@ func NewPing() *Ping {
 
 func (p *Ping) Run() utils.PingDelaySet {
 	if len(p.ips) == 0 {
+		fmt.Println("[无法启动] 加载的 IP 数量为 0，请检查 IP 配置文件是否正确")
 		return p.csv
 	}
+	fmt.Printf("[信息] 从文件加载了 %d 个 IP\n", len(p.ips))
 	if Httping {
 		fmt.Printf("开始延迟测速（模式：HTTP, 端口：%d, 范围：%v ~ %v ms, 丢包：%.2f)\n", TCPPort, utils.InputMinDelay.Milliseconds(), utils.InputMaxDelay.Milliseconds(), utils.InputMaxLossRate)
 	} else {
 		fmt.Printf("开始延迟测速（模式：TCP, 端口：%d, 范围：%v ~ %v ms, 丢包：%.2f)\n", TCPPort, utils.InputMinDelay.Milliseconds(), utils.InputMaxDelay.Milliseconds(), utils.InputMaxLossRate)
 	}
 	for _, ip := range p.ips {
+		if utils.CheckCanceled() {
+			fmt.Println("延迟测速已取消")
+			break
+		}
 		p.wg.Add(1)
 		p.control <- false
 		go p.start(ip)

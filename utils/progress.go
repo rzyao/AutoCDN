@@ -16,8 +16,13 @@ func NewBar(count int, MyStrStart, MyStrEnd string) *Bar {
 	return &Bar{pb: bar}
 }
 
+var ProgressHandler func(current int, total int, message string)
+
 func (b *Bar) Grow(num int, MyStrVal string) {
 	b.pb.Set("MyStr", MyStrVal).Add(num)
+	if ProgressHandler != nil {
+		ProgressHandler(int(b.pb.Current()), int(b.pb.Total()), MyStrVal)
+	}
 }
 
 func (b *Bar) Done() {
